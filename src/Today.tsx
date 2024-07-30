@@ -1,7 +1,7 @@
 
 import { useQuery, gql } from '@apollo/client';
 import moment from 'moment';
-import { toHuman } from './timeUtils';
+import { toHuman } from './utils';
 
 const Today = () => {
 
