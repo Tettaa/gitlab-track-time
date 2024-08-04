@@ -12,7 +12,7 @@ function toHuman(totalSeconds: number ) {
 }  
 
 
-const isEmpty = (obj) => {
+const isEmpty = (obj: any) => {
     for(let key in obj) {
         if(obj.hasOwnProperty(key))
             return false;

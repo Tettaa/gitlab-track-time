@@ -1,8 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
-import Today from './Today.tsx'
-import TodayEffort from './TodayEffort.tsx'
 import 'bootstrap/dist/css/bootstrap.css';
 import './index.css'
 
