@@ -24,8 +24,8 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  /*display: flex;
+  place-items: center;*/
   min-width: 320px;
   min-height: 100vh;
 }
@@ -72,4 +72,9 @@ button:focus-visible {
 .form-error-field {
   border-color: red;
   box-shadow: 1px 1px 3px red;
+}
+
+
+.nav-link.active {
+  font-weight: 700;
 }

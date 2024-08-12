@@ -7,8 +7,7 @@ function secondsToHumanReadable(seconds: number) {
 
 function toHuman(totalSeconds: number ) {
     const humanReadableTime = secondsToHumanReadable(totalSeconds);
-    console.log(humanReadableTime);
-    return humanReadableTime;
+    return humanReadableTime
 }  
 
 

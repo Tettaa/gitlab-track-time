@@ -6,21 +6,22 @@ import Today from './Today';
 import { type UserData } from './Types';
 import GitLabDataForm from './GitLabDataForm';
 import * as bootstrap from 'bootstrap';
-
+import Dashboard from './Dashboards';
 import {
   createBrowserRouter,
   Link,
+  NavLink,
   Route,
   RouterProvider,
   BrowserRouter,
   Routes,
   Outlet,
-  createMemoryRouter
+  createMemoryRouter,
+  Navigate
 } from "react-router-dom";
 
 
 function App() {
-
   
   let uData : UserData = {};
   if (localStorage.getItem("url")) {
@@ -32,10 +33,9 @@ function App() {
   if (localStorage.getItem("userName")) {
     uData.userName = localStorage.getItem("userName");
   }
+  
   const [userData, setUserData] = useState<UserData>( uData )
   
-  
-
 
   if(!userData.url || !userData.token || !userData.userName ) {
 
@@ -77,67 +77,50 @@ function App() {
     return (
       <div>
         <h2>About</h2>
-        <Link to='/dashboard' className='btn btn-primary'>Vai alla dash</Link><br/>
+        
         <a onClick={openATab} href='#'>Apri</a>
 
       </div>
     );
   }
   
-  function Dashboard() {
+/*   function Dashboard() {
     
     return (
       <div>
         <h2>Dashboard</h2>
-        <Link to='/about' className='btn btn-primary'>Vai all'about</Link><br/>
-
         <Modal/>
 
       </div>
     );
-  }
+  } */
 
 
-
-  function Modal () {
-    const showModal = () => {
-      const bsModal = new bootstrap.Modal("#modalId", {
-          backdrop: 'static',
-          keyboard: true
-      })
-      bsModal.show()
-    }
-
-    const hideModal = () => {
-      const bsModal= bootstrap.Modal.getInstance("#modalId")
-      bsModal.hide()
-  }
-
+  function Layout() {
     return (
       <>
-        <button type="button" className="btn btn-primary" onClick={showModal}>Add Employee</button>
-        <div className="modal fade" id="modalId" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h1 className="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              ...
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" onClick={hideModal}>Close</button>
-              <button type="button" className="btn btn-primary">Save changes</button>
-            </div>
-          </div>
+
+      <nav className="navbar navbar-expand-lg bg-body-tertiary d-none d-sm-block">
+        <div className="container-fluid">
+          <NavLink to='/today' className='nav-link'>Today effort</NavLink>
+          <NavLink to='/dashboard' className='nav-link'>Dashboard</NavLink>
+          <NavLink to='/my-issue' className='nav-link'>My issue</NavLink>
+          <NavLink to='/settings' className='nav-link'>Settings</NavLink>
         </div>
-      </div>
-      </>
+      </nav>
+
+      
 
 
-    )
+  <div>
+    <Outlet />
+  </div>
+  </>
+      
+    );
   }
+
+
 
 
   function Navigation() {
@@ -145,10 +128,12 @@ function App() {
     // component below are unchanged
     return (
         <Routes>
-          <Route path="" element={<About />}/> 
-          <Route path="about" element={<About />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="settings" element={<GitLabDataForm setUserData={setUserData} />} />      
+          <Route index element={<Navigate to="today" />} />
+          <Route path="" element={<Layout />}>
+            <Route path="today" element={ <Today username={userData.userName}/>} />
+            <Route path="dashboard" element={<Dashboard username={userData.userName}/>} />
+            <Route path="settings" element={<GitLabDataForm setUserData={setUserData} />} />      
+          </Route>
         </Routes>
     );
   }
@@ -165,14 +150,6 @@ function App() {
       <RouterProvider router={router} />
     </ApolloProvider>
 
-        
-
-
-      {/* <ApolloProvider client={client}>
-       
-          <RouterProvider router={router} />
-        
-      </ApolloProvider> */}
     </>
   )
 }
