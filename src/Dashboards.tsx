@@ -1,7 +1,7 @@
 import { useQuery, gql } from '@apollo/client';
 import moment from 'moment';
 import { toHuman } from './utils';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import * as bootstrap from 'bootstrap';
 import ApolloFetchError from './ApolloFetchError';
 
@@ -10,16 +10,33 @@ function Dashboard({username}) {
     const [totalToday,setTotalToday]  = useState(0);
     const [totalWeek, setTotalWeek] = useState(0);
 
-
-    const [modalState, setModalState] = useState({
+    let modalStateEmpty = {
+        open: false,
         issueId: '',
         issueTitle: '',
         projectTitle:'',
-    });
+    };
+    const [modalState, setModalState] = useState(modalStateEmpty);
+    const [modalObject, setModalObject] = useState();
+    const ref = useRef("dashboardModal");
+    const modalTitle = useRef();
+
+
 
     var now = moment().add(-5,'days');
     var monday = now.clone().weekday(1);
     var friday = now.clone().weekday(7);
+
+    useEffect(() => {
+        console.log("render Dashboard");
+     
+            console.log("render Dashboard");
+            console.log("x is "+document.getElementById('dashboardModal'));
+            const myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById(ref.current))
+            //setModalObject(myModal)
+        
+    },[])
+
 
     
     let timelogs = gql`
@@ -76,43 +93,41 @@ function Dashboard({username}) {
     
 
     const showModal = (key) => {
+        let found = false;  
         data.timelogs.nodes.forEach((node) => {
              let id = `${node.issue.title}#${node.project.name}`;
-            if(id == key) {
-                console.log('ciao');
-                setModalState({
-                    ...modalState,                   
+            if(id == key && !found) {
+                 setModalState({
+                    ...modalStateEmpty,                   
                     issueId: node.issue.id,
                     issueTitle: node.issue.title,
-                    projectTitle:node.project.name,                    
-                  })
-                 
+                    projectTitle:node.project.name,  
+                    open:true,                   
+                  }); 
+                  found = true;                 
             }
-            
           });
 
-
-        const bsModal = new bootstrap.Modal("#dashboardModal", {
-            backdrop: 'static',
-            keyboard: true
-        })
-        bsModal.show()
       }
-  
-    const hideModal = () => {
-        const bsModal= bootstrap.Modal.getInstance("#dashboardModal")
-        bsModal.hide()
-    }
+
 
     function Modal ({modalState}) {
-    
+        useEffect(() => {
+            console.log("render Modal");         
+            const myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById(ref.current))
+            if(modalState.open) {
+                myModal.show();
+            }else{
+                myModal.hide();
+            }            
+        },[])
         return (
           <>           
-            <div className="modal fade" id="dashboardModal" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div className="modal fade" id="dashboardModal"  aria-hidden="true">
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header">
-                  <h1 className="modal-title fs-5" id="exampleModalLabel">{modalState.issueTitle}</h1>
+                  <h1 className="modal-title fs-5" >{modalState.projectTitle} -  {modalState.issueTitle}</h1>
                   <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div className="modal-body">
@@ -127,14 +142,11 @@ function Dashboard({username}) {
                 </div>
                 <div className="mb-3">
                     <label  className="form-label">Example textarea</label>
-                    <textarea className="form-control" id="exampleFormControlTextarea1" rows={3} ></textarea>
+                    <textarea className="form-control" rows={3} ></textarea>
                 </div>
-
-
-
                 </div>
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" onClick={hideModal}>Close</button>
+                  <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" >Close</button>
                   <button type="button" className="btn btn-primary">Save changes</button>
                 </div>
               </div>
@@ -146,6 +158,9 @@ function Dashboard({username}) {
 
     return (
         <>
+
+            <Modal modalState={modalState} />
+
 
             {(error || loading) && 
             
@@ -191,9 +206,11 @@ function Dashboard({username}) {
                     </tbody>                    
                 </table>
 
-                <Modal modalState={modalState}/>
+                
 
                 <a onClick={() => {chrome.tabs.create({ url: document.URL });}} href='#'>Open in tab</a>
+
+
             </div>
             }
 
