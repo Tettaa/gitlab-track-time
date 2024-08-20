@@ -5,4 +5,13 @@ type UserData = {
   };
 
 
-export type {UserData};
+  type IssueData = {
+    gitlabId: string,
+    title: string,
+    projectTitle: string,
+    description?: string,
+    total?: number,
+  };
+
+
+export type {UserData, IssueData};
