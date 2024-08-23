@@ -16,7 +16,7 @@ function Dashboard({username}) {
     };
     const [modalState, setModalState] = useState(modalStateEmpty);
     
-    var now = moment().add(-9,'days');
+    var now = moment();//.add(-9,'days');
     var monday = now.clone().weekday(1);
     var friday = now.clone().weekday(7);
 
@@ -72,9 +72,9 @@ function Dashboard({username}) {
 
     function Modal ({modalState, setModalState, refetch}) {
         const ref = useRef("dashboardModal");
-        const[time, setTime] = useState();
-        const[date, setDate] = useState();
-        const[summary, setSummary] = useState();
+        const[time, setTime] = useState<string>();
+        const[date, setDate] = useState<string>();
+        const[summary, setSummary] = useState<string>();
 
         useEffect(() => {
             console.log("render Modal");         
@@ -154,69 +154,135 @@ function Dashboard({username}) {
 
 
     function Table({apolloData}) {
-        const [effortMap, setEffortMap] = useState(new Map());
+        const [issues, setIssues] = useState<IssueData[]>();
+        const [weekDates, setWeekDates] = useState<string[]>();
+        const [effortMap, setEffortMap] = useState<any[][]>();
         const [totalWeek, setTotalWeek] = useState(0);
 
         useEffect(()=>{
-            let tMap = new Map();
+            console.log("init Table"); 
             let tt = 0;
             let tw = 0;
-      
-            apolloData.timelogs.nodes.forEach((node) => {
-                const id = `${node.issue.title}#${node.project.name}`;
-                const spentDate = moment(node.spentAt);
+
             
+            let issueList: IssueData[] = []; 
+            let mapData = new Map();
+            apolloData.timelogs.nodes.forEach((node) => {
+                let issueData : IssueData = {
+                    gitlabId: '',
+                    title: '',
+                    projectTitle: ''
+                };                
+                issueData.gitlabId = node.issue.id;
+                issueData.title = node.issue.title;
+                issueData.projectTitle = node.project.name;
+                mapData.set(node.issue.id,issueData);
+                //issueList.push(issueData);
+            });
+            setIssues([...mapData.values()]);
+
+            let matrix: any[][] = [];
+
+            apolloData.timelogs.nodes.forEach((node) => {
+                const spentDate = moment(node.spentAt);
                 if (spentDate.isSame(now , 'day')) {
                     tt += node.timeSpent;
                 }
                 tw += node.timeSpent;
-            
-                if (!tMap.has(id)) {
-                    tMap.set(id, node.timeSpent);
-                } else {
-                    tMap.set(id, tMap.get(id) + node.timeSpent);
+                
+                if(typeof matrix[node.issue.id] == "undefined"){
+                    matrix[node.issue.id] = [];
+                    matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] = node.timeSpent;
+                }else{
+                    if(typeof matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] == "undefined"){
+                        matrix[node.issue.id] = [];
+                        matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] = node.timeSpent;
+                    }else{
+                        matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] += node.timeSpent;
+                    }
                 }
+
               });
-              console.log("render Table"); 
-              setEffortMap(tMap);
+
+
+              let weekdays: string[] = [];
+              let tmp = monday;
+              for(let x = 0;x < 7 && tmp.format('DD.MM.YYYY') != friday.format('DD.MM.YYYY');x++, tmp=tmp.add(1,'days')) {
+                weekdays.push(tmp.format('DD.MM.YYYY'));
+              }
+              setWeekDates(weekdays);
+              console.log(weekdays); 
+              console.log(issueList);
+              setEffortMap(matrix);
               setTotalWeek(tw);
+              
+              console.log("render Table"); 
         },[]);
 
 
+        function retrieveValue(x,y){
+            if(typeof effortMap[x] == "undefined"){
+                return "0";
+            }
+            if(typeof effortMap[x][y] == "undefined"){
+                return "0";
+            }
+            return toHuman(effortMap[x][y]);
+
+        }
+
+
         return(
-                <table className="table">
-                    <thead>
-                    <tr>
-                        <th>
-                            Issue#Project
-                        </th>
-                        <th>Effort</th>
-                    </tr>
-                    </thead>
 
-                    <tbody>
-                    {
-                       Array.from(effortMap.entries()).map(([key, value]) => (
+            <>
+                { weekDates && effortMap &&
+                    <table className="table">
+                        <thead>
+                        <tr>
+                            <th>
+                                Project
+                            </th>
+                            <th>
+                                Issue
+                            </th>
 
-                            
-                            <tr key={key}>
+                            {
+                                Array.from(weekDates).map((dateFormat) => (
+                                    <th key={dateFormat}>{dateFormat}</th>
+                                ))
+                            }
+                            <th>Effort</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        {
+                             Array.from(issues).map((i) => (
+                                <tr key={i.gitlabId}>
+                                <td>{i.projectTitle}</td>
+                                <td>
+                                    <a href='' onClick={(e) => {e.preventDefault(); showModal(i.gitlabId)}}>{i.title}</a>
+                                </td>
+                                {
+                                    weekDates.map((dateFormat) => (
+                                        <td key={dateFormat}>{retrieveValue(i.gitlabId,dateFormat) != "0" ?  <b>{retrieveValue(i.gitlabId,dateFormat)}</b> : 0  }</td>
+                                    ))
+                                }
+                                </tr>
+                            ))
+                        }
+                        {/* <tr>
                             <td>
-
-                                <a href='' onClick={(e) => {e.preventDefault(); showModal(key)}}>{key}</a>
-
+                                Totals
                             </td>
-                            <td>{toHuman(value)}</td>
-                            </tr>
-                        ))
+                            <td>{toHuman(totalWeek)}</td>
+                        </tr> */}
+                        </tbody>                    
+                    </table> 
+
                     }
-                    <tr>
-                        <td>
-                            Totals
-                        </td>
-                        <td>{toHuman(totalWeek)}</td>
-                    </tr>
-                    </tbody>                    
-                </table>
+            </>
+            
         )
 
 

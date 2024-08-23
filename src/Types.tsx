@@ -10,7 +10,6 @@ type UserData = {
     title: string,
     projectTitle: string,
     description?: string,
-    total?: number,
   };
 
 

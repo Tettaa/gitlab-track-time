@@ -11,7 +11,7 @@ const Today = ({username}) => {
     const [totalWeek, setTotalWeek] = useState(0);
 
 
-    var now = moment().add(-1,'days');
+    var now = moment();
     var monday = now.clone().weekday(1);
     var friday = now.clone().weekday(7);
 
