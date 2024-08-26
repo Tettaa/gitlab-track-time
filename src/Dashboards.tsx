@@ -1,10 +1,11 @@
 import { useQuery, gql, useMutation } from '@apollo/client';
 import moment from 'moment';
 import { toHuman } from './utils';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as bootstrap from 'bootstrap';
 import ApolloFetchError from './ApolloFetchError';
 import { type IssueData } from './Types';
+
 
 function Dashboard({username}) {
     
@@ -16,7 +17,7 @@ function Dashboard({username}) {
     };
     const [modalState, setModalState] = useState(modalStateEmpty);
     
-    var now = moment();//.add(-9,'days');
+    var now = moment().add(-20,'days');
     var monday = now.clone().weekday(1);
     var friday = now.clone().weekday(7);
 
@@ -50,11 +51,11 @@ function Dashboard({username}) {
     });
     
 
+
     const showModal = (key) => {
         let found = false;  
         data.timelogs.nodes.forEach((node) => {
-             let id = `${node.issue.title}#${node.project.name}`;
-            if(id == key && !found) {
+            if(node.issue.id == key && !found) {
                  setModalState({
                     ...modalStateEmpty,                   
                     issueId: node.issue.id,
@@ -65,7 +66,6 @@ function Dashboard({username}) {
                   found = true;                 
             }
           });
-
       }
 
 
@@ -76,15 +76,33 @@ function Dashboard({username}) {
         const[date, setDate] = useState<string>();
         const[summary, setSummary] = useState<string>();
 
+        //create mutation
+        let createTimeLog  = gql`
+            mutation createTimelog($gitlabIssueId: IssuableID!, $timeSpent: String!, $spentAt: Time, $summary: String!) {
+                timelogCreate (input: {
+                    issuableId: $gitlabIssueId,
+                    timeSpent: $timeSpent,
+                    spentAt: $spentAt,
+                    summary: $summary
+                }){
+                    errors
+                }
+                }
+            `;
+
+        const [createTimeFn, { data, loading, error }] = useMutation(createTimeLog);
+
+
+
         useEffect(() => {
             console.log("render Modal");         
             const myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById(ref.current))
             if(modalState.open) {
                 myModal.show();
-                //console.log("show Modal");    
+                console.log("show Modal");    
             }else{
                 myModal.hide();
-                //console.log("hide Modal");
+                console.log("hide Modal");
             }            
         },[])
 
@@ -92,26 +110,32 @@ function Dashboard({username}) {
         function handleSubmit (e) {
             e.preventDefault();
             //Validate input
-
-
-            //create mutation
-          let createTimeLog  = gql`
-            mutation c{
-                timelogCreate (input: {
-                    issuableId:"gid://gitlab/Issue/151349433",
-                    timeSpent:"${time}",
-                    spentAt:"${date}",
-                    summary:"${summary}"
-                }){
-                    errors
-                }
-                }
-            `;
-
+            let variables = {
+                variables: {
+                        gitlabIssueId: modalState.issueId,
+                        timeSpent: time,
+                        spentAt: date,
+                        summary: typeof summary == "undefined" ? "":summary
+                    }                
+                
+            };
+            createTimeFn( {
+                    variables: {
+                            gitlabIssueId: modalState.issueId,
+                            timeSpent: time,
+                            spentAt: date,
+                            summary: typeof summary == "undefined" ? "":summary
+                    },           
+                },  
+            );
+            
             const myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById(ref.current))
             myModal.hide();
             setModalState({...modalStateEmpty,  open:false})
-            refetch();
+           //I dont like it.
+            setTimeout(()=> {
+                refetch();
+            },900)
         }
 
         return (
@@ -132,7 +156,7 @@ function Dashboard({username}) {
                     </div>
                     <div className="mb-3">
                         <label  className="form-label">Date</label>
-                        <input  className="form-control" type='date' value={date} onChange={e => setDate(e.target.value)}/>
+                        <input  className="form-control" type='date' value={date} onChange={e => setDate(e.target.value)} /> 
                     </div>
                     <div className="mb-3">
                         <label  className="form-label">Summary</label>
@@ -159,13 +183,13 @@ function Dashboard({username}) {
         const [effortMap, setEffortMap] = useState<any[][]>();
         const [totalWeek, setTotalWeek] = useState(0);
 
-        useEffect(()=>{
+
+        useMemo(()=> {
             console.log("init Table"); 
             let tt = 0;
             let tw = 0;
 
             
-            let issueList: IssueData[] = []; 
             let mapData = new Map();
             apolloData.timelogs.nodes.forEach((node) => {
                 let issueData : IssueData = {
@@ -177,7 +201,6 @@ function Dashboard({username}) {
                 issueData.title = node.issue.title;
                 issueData.projectTitle = node.project.name;
                 mapData.set(node.issue.id,issueData);
-                //issueList.push(issueData);
             });
             setIssues([...mapData.values()]);
 
@@ -195,7 +218,7 @@ function Dashboard({username}) {
                     matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] = node.timeSpent;
                 }else{
                     if(typeof matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] == "undefined"){
-                        matrix[node.issue.id] = [];
+                        //matrix[node.issue.id] = [];
                         matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] = node.timeSpent;
                     }else{
                         matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] += node.timeSpent;
@@ -211,13 +234,16 @@ function Dashboard({username}) {
                 weekdays.push(tmp.format('DD.MM.YYYY'));
               }
               setWeekDates(weekdays);
-              console.log(weekdays); 
-              console.log(issueList);
+/*               console.log(weekdays); 
+              console.log(issues);
+              console.log(matrix) */;
               setEffortMap(matrix);
               setTotalWeek(tw);
               
               console.log("render Table"); 
-        },[]);
+        },[])
+
+
 
 
         function retrieveValue(x,y){
@@ -279,8 +305,9 @@ function Dashboard({username}) {
                         </tr> */}
                         </tbody>                    
                     </table> 
-
                     }
+                                <button onClick={() => {refetch()}}>ciao</button>
+
             </>
             
         )
