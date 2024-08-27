@@ -17,7 +17,7 @@ function Dashboard({username}) {
     };
     const [modalState, setModalState] = useState(modalStateEmpty);
     
-    var now = moment().add(-20,'days');
+    var now = moment();//.add(-20,'days');
     var monday = now.clone().weekday(1);
     var friday = now.clone().weekday(7);
 
@@ -202,7 +202,11 @@ function Dashboard({username}) {
                 issueData.projectTitle = node.project.name;
                 mapData.set(node.issue.id,issueData);
             });
-            setIssues([...mapData.values()]);
+            
+            setIssues([...mapData.values()]
+                .sort((n1,n2) => n1.title > n2.title ? -1:1)
+                .sort((n1,n2) => n1.projectTitle > n2.projectTitle ? -1:1)
+            );
 
             let matrix: any[][] = [];
 
@@ -228,6 +232,23 @@ function Dashboard({username}) {
               });
 
 
+              apolloData.timelogs.nodes.forEach((node) => {
+                let day = moment(node.spentAt).format('DD.MM.YYYY')
+               
+                if(typeof matrix['day_total'] == "undefined"){
+                    matrix['day_total'] = [];
+                    matrix['day_total'][day] = node.timeSpent;
+                }else{
+                    if(typeof matrix['day_total'][day] == "undefined"){
+                        matrix['day_total'][day] = 0;
+                    }
+                    matrix['day_total'][day] += node.timeSpent;
+                    
+                }
+            })
+            
+
+
               let weekdays: string[] = [];
               let tmp = monday;
               for(let x = 0;x < 7 && tmp.format('DD.MM.YYYY') != friday.format('DD.MM.YYYY');x++, tmp=tmp.add(1,'days')) {
@@ -235,8 +256,8 @@ function Dashboard({username}) {
               }
               setWeekDates(weekdays);
 /*               console.log(weekdays); 
-              console.log(issues);
-              console.log(matrix) */;
+              console.log(issues);*/
+              console.log(matrix) ;
               setEffortMap(matrix);
               setTotalWeek(tw);
               
@@ -297,6 +318,20 @@ function Dashboard({username}) {
                                 </tr>
                             ))
                         }
+                        
+                            <tr>
+                                <td ><b>Totale</b></td><td></td>
+                                {
+                                    weekDates.map((dateFormat) => (
+                                        <td key={dateFormat}>{effortMap['day_total'][dateFormat] != "0" ?  <b>{toHuman(effortMap['day_total'][dateFormat])}</b> : 0  }</td>
+                                        
+                                    ))
+                                }
+
+                            </tr>
+                        
+
+
                         {/* <tr>
                             <td>
                                 Totals
@@ -306,7 +341,6 @@ function Dashboard({username}) {
                         </tbody>                    
                     </table> 
                     }
-                                <button onClick={() => {refetch()}}>ciao</button>
 
             </>
             
