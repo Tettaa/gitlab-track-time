@@ -9,6 +9,7 @@ type UserData = {
     gitlabId: string,
     title: string,
     projectTitle: string,
+    projectWebUrl?: string,
     description?: string,
   };
 

@@ -8,6 +8,7 @@ import { type IssueData } from './Types';
 
 
 function Dashboard({username}) {
+
     
     let modalStateEmpty = {
         open: false,
@@ -41,6 +42,7 @@ function Dashboard({username}) {
                 project{
                     id
                     name
+                    webUrl
                 }
                 }
             }
@@ -200,6 +202,7 @@ function Dashboard({username}) {
                 issueData.gitlabId = node.issue.id;
                 issueData.title = node.issue.title;
                 issueData.projectTitle = node.project.name;
+                issueData.projectWebUrl =  node.project.webUrl;
                 mapData.set(node.issue.id,issueData);
             });
             
@@ -306,7 +309,7 @@ function Dashboard({username}) {
                         {
                              Array.from(issues).map((i) => (
                                 <tr key={i.gitlabId}>
-                                <td>{i.projectTitle}</td>
+                                <td> <a href='#' onClick={(e) => window.open(i.projectWebUrl+"/-/issues", "_blank")}>{i.projectTitle}</a> </td>
                                 <td>
                                     <a href='' onClick={(e) => {e.preventDefault(); showModal(i.gitlabId)}}>{i.title}</a>
                                 </td>
