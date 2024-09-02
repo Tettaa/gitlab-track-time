@@ -77,6 +77,11 @@ function Dashboard({username}) {
         const[time, setTime] = useState<string>();
         const[date, setDate] = useState<string>();
         const[summary, setSummary] = useState<string>();
+        const[errorFieldsState, setErrorFieldsState] = useState<any>({
+            timef: false,
+            datef: false
+        });
+
 
         //create mutation
         let createTimeLog  = gql`
@@ -112,6 +117,22 @@ function Dashboard({username}) {
         function handleSubmit (e) {
             e.preventDefault();
             //Validate input
+            if(!time) {
+                setErrorFieldsState((errors) => {
+                    return {...errors,time:true};
+                })
+            }
+            if(!date) {
+                setErrorFieldsState((errors) => {
+                    return {...errors,date:true};
+                })
+            }
+
+            if(!time || !date) {
+                return;
+            }
+
+
             let variables = {
                 variables: {
                         gitlabIssueId: modalState.issueId,
@@ -155,10 +176,12 @@ function Dashboard({username}) {
                     <div className="mb-3">
                         <label  className="form-label">Hours</label>
                         <input  className="form-control" placeholder="1h 30m" value={time} onChange={e => setTime(e.target.value)}/>
+                        <p className={'invalid-feedback '+ (errorFieldsState.time ? 'd-block':'') }>Please fill time field</p>
                     </div>
                     <div className="mb-3">
                         <label  className="form-label">Date</label>
                         <input  className="form-control" type='date' value={date} onChange={e => setDate(e.target.value)} /> 
+                        <p className={'invalid-feedback '+ (errorFieldsState.date ? 'd-block':'')}>Please fill the date field</p>
                     </div>
                     <div className="mb-3">
                         <label  className="form-label">Summary</label>
