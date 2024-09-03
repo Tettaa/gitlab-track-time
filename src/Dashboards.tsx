@@ -1,5 +1,5 @@
 import { useQuery, gql, useMutation } from '@apollo/client';
-import moment from 'moment';
+import moment, { Moment } from 'moment';
 import { toHuman } from './utils';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as bootstrap from 'bootstrap';
@@ -7,9 +7,8 @@ import ApolloFetchError from './ApolloFetchError';
 import { type IssueData } from './Types';
 
 
-function Dashboard({username}) {
+function Dashboard({username, fromDate, toDate}) {
 
-    
     let modalStateEmpty = {
         open: false,
         issueId: '',
@@ -17,18 +16,18 @@ function Dashboard({username}) {
         projectTitle:'',
     };
     const [modalState, setModalState] = useState(modalStateEmpty);
-    
-    var now = moment();//.add(-20,'days');
-    var monday = now.clone().weekday(1);
-    var friday = now.clone().weekday(7);
+
 
     useEffect(() => {
-        console.log("render Dashboard");        
-    },[])
+        console.log("render Dashboard"); 
+        console.log("startTime", fromDate);
+        console.log("endTime", toDate);      
+    },[fromDate,toDate])
     
+
     let timelogs = gql`
-         query {
-            timelogs(startDate:"${monday.format('YYYY-MM-DD')}", endDate:"${friday.format('YYYY-MM-DD')}", username: "${username}") {
+         query ($startDate: Time , $endDate: Time, $username: String!){
+            timelogs(startDate: $startDate, endDate: $endDate, username: $username) {
             totalSpentTime
             nodes {
                 id
@@ -50,29 +49,37 @@ function Dashboard({username}) {
 
     const { loading, error, data, refetch, client  } =  useQuery(timelogs, {
         fetchPolicy: 'network-only',
+        variables:{
+            startDate: fromDate,
+            endDate: toDate,
+            username: username,
+        }
     });
     
 
 
-    const showModal = (key) => {
+     const showModal = (key) => {
         let found = false;  
         data.timelogs.nodes.forEach((node) => {
             if(node.issue.id == key && !found) {
-                 setModalState({
+                setModalState({
                     ...modalStateEmpty,                   
                     issueId: node.issue.id,
                     issueTitle: node.issue.title,
                     projectTitle:node.project.name,  
                     open:true,                   
-                  }); 
-                  found = true;                 
+                }); 
+                found = true;                 
             }
-          });
-      }
+        });
+     }
 
 
 
-    function Modal ({modalState, setModalState, refetch}) {
+     
+
+
+    function AddTimeModal ({modalState, setModalState, refetch}) {
         const ref = useRef("dashboardModal");
         const[time, setTime] = useState<string>();
         const[date, setDate] = useState<string>();
@@ -99,17 +106,15 @@ function Dashboard({username}) {
 
         const [createTimeFn, { data, loading, error }] = useMutation(createTimeLog);
 
-
-
         useEffect(() => {
             console.log("render Modal");         
             const myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById(ref.current))
             if(modalState.open) {
                 myModal.show();
-                console.log("show Modal");    
+                //console.log("show Modal");    
             }else{
                 myModal.hide();
-                console.log("hide Modal");
+                //console.log("hide Modal");
             }            
         },[])
 
@@ -208,7 +213,6 @@ function Dashboard({username}) {
         const [effortMap, setEffortMap] = useState<any[][]>();
         const [totalWeek, setTotalWeek] = useState(0);
 
-
         useMemo(()=> {
             console.log("init Table"); 
             let tt = 0;
@@ -238,7 +242,7 @@ function Dashboard({username}) {
 
             apolloData.timelogs.nodes.forEach((node) => {
                 const spentDate = moment(node.spentAt);
-                if (spentDate.isSame(now , 'day')) {
+                if (spentDate.isSame(moment() , 'day')) {
                     tt += node.timeSpent;
                 }
                 tw += node.timeSpent;
@@ -274,19 +278,14 @@ function Dashboard({username}) {
             })
             
 
-
               let weekdays: string[] = [];
-              let tmp = monday;
-              for(let x = 0;x < 7 && tmp.format('DD.MM.YYYY') != friday.format('DD.MM.YYYY');x++, tmp=tmp.add(1,'days')) {
+              let tmp = moment(fromDate);
+              for(let x = 0;x < 7 && tmp.format('DD.MM.YYYY') != toDate;x++, tmp=tmp.add(1,'days')) {
                 weekdays.push(tmp.format('DD.MM.YYYY'));
               }
               setWeekDates(weekdays);
-/*               console.log(weekdays); 
-              console.log(issues);*/
-              console.log(matrix) ;
               setEffortMap(matrix);
-              setTotalWeek(tw);
-              
+              setTotalWeek(tw);            
               console.log("render Table"); 
         },[])
 
@@ -348,22 +347,14 @@ function Dashboard({username}) {
                             <tr>
                                 <td ><b>Totale</b></td><td></td>
                                 {
-                                    weekDates.map((dateFormat) => (
-                                        <td key={dateFormat}>{effortMap['day_total'][dateFormat] != "0" ?  <b>{toHuman(effortMap['day_total'][dateFormat])}</b> : 0  }</td>
+                                    Array.from(weekDates).map((dateFormat) => (
+                                        <td key={dateFormat}>{effortMap.hasOwnProperty('day_total')  && effortMap['day_total'][dateFormat] != "0" ?  <b>{toHuman(effortMap['day_total'][dateFormat])}</b> : 0  }</td>
                                         
                                     ))
                                 }
 
                             </tr>
-                        
-
-
-                        {/* <tr>
-                            <td>
-                                Totals
-                            </td>
-                            <td>{toHuman(totalWeek)}</td>
-                        </tr> */}
+            
                         </tbody>                    
                     </table> 
                     }
@@ -371,8 +362,6 @@ function Dashboard({username}) {
             </>
             
         )
-
-
     }  
 
 
@@ -380,7 +369,7 @@ function Dashboard({username}) {
     return (
         <>
 
-            <Modal 
+            <AddTimeModal 
                 modalState={modalState}
                 setModalState={setModalState} 
                 refetch={refetch}
@@ -397,10 +386,11 @@ function Dashboard({username}) {
             {!(error || loading) && 
             <div>
 
+              
+                
                 <Table apolloData={data}/>
 
                 <a onClick={() => {chrome.tabs.create({ url: document.URL });}} href='#'>Open in tab</a>
-
 
             </div>
             }

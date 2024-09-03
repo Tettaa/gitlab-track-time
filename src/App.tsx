@@ -19,6 +19,7 @@ import {
   createMemoryRouter,
   Navigate
 } from "react-router-dom";
+import DashboardControl from './DashboardControl';
 
 
 function App() {
@@ -131,7 +132,7 @@ function App() {
           <Route index element={<Navigate to="today" />} />
           <Route path="" element={<Layout />}>
             <Route path="today" element={ <Today username={userData.userName}/>} />
-            <Route path="dashboard" element={<Dashboard username={userData.userName}/>} />
+            <Route path="dashboard" element={<DashboardControl username={userData.userName}/>} />
             <Route path="settings" element={<GitLabDataForm setUserData={setUserData} />} />      
           </Route>
         </Routes>
