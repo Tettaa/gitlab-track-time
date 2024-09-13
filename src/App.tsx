@@ -38,6 +38,13 @@ function App() {
   const [userData, setUserData] = useState<UserData>( uData )
   
 
+
+  const updateUserData = (data: UserData) =>  {
+    setUserData(data);
+  }
+
+
+
   if(!userData.url || !userData.token || !userData.userName ) {
 
     return (
@@ -69,57 +76,26 @@ function App() {
   });
 
 
-  function About() {
 
-    const openATab = () => {
-      chrome.tabs.create({ url: document.URL });
-    }
+    function Layout() {
+      return (
+        <>
 
-    return (
-      <div>
-        <h2>About</h2>
+        <nav className="navbar navbar-expand-lg bg-body-tertiary d-none d-sm-block">
+          <div className="container-fluid">
+            <NavLink to='/today' className='nav-link'>Today effort</NavLink>
+            <NavLink to='/dashboard' className='nav-link'>Dashboard</NavLink>
+            <NavLink to='/my-issue' className='nav-link'>My issue</NavLink>
+            <NavLink to='/settings' className='nav-link'>Settings</NavLink>
+          </div>
+        </nav>
+    <div>
+      <Outlet />
+    </div>
+    </>
         
-        <a onClick={openATab} href='#'>Apri</a>
-
-      </div>
-    );
-  }
-  
-/*   function Dashboard() {
-    
-    return (
-      <div>
-        <h2>Dashboard</h2>
-        <Modal/>
-
-      </div>
-    );
-  } */
-
-
-  function Layout() {
-    return (
-      <>
-
-      <nav className="navbar navbar-expand-lg bg-body-tertiary d-none d-sm-block">
-        <div className="container-fluid">
-          <NavLink to='/today' className='nav-link'>Today effort</NavLink>
-          <NavLink to='/dashboard' className='nav-link'>Dashboard</NavLink>
-          <NavLink to='/my-issue' className='nav-link'>My issue</NavLink>
-          <NavLink to='/settings' className='nav-link'>Settings</NavLink>
-        </div>
-      </nav>
-
-      
-
-
-  <div>
-    <Outlet />
-  </div>
-  </>
-      
-    );
-  }
+      );
+    }
 
 
 
@@ -133,7 +109,7 @@ function App() {
           <Route path="" element={<Layout />}>
             <Route path="today" element={ <Today username={userData.userName}/>} />
             <Route path="dashboard" element={<DashboardControl username={userData.userName}/>} />
-            <Route path="settings" element={<GitLabDataForm setUserData={setUserData} />} />      
+            <Route path="settings" element={<GitLabDataForm setUserData={updateUserData} />} />      
           </Route>
         </Routes>
     );

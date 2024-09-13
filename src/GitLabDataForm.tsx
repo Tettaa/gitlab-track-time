@@ -10,21 +10,19 @@ function GitLabDataForm({setUserData}) {
       userName: '',
     }
 
+    if (localStorage.getItem("url")) {
+      defaultObject.url = localStorage.getItem("url");
+    }
+    if (localStorage.getItem("token")) {
+      defaultObject.token = localStorage.getItem("token");
+    }
+    if (localStorage.getItem("userName")) {
+      defaultObject.userName = localStorage.getItem("userName");
+    }
+
+
     const [formErrors, setFormErrors] = useState( {} )
     const [tempUserData, setTempUserData] = useState( defaultObject );
-
-  
-  let uData : UserData = {};
-  if (localStorage.getItem("url")) {
-    uData.url = localStorage.getItem("url");
-  }
-  if (localStorage.getItem("token")) {
-    uData.token = localStorage.getItem("token");
-  }
-  if (localStorage.getItem("userName")) {
-    uData.userName = localStorage.getItem("userName");
-  }
-
 
   let handleSubmit = (e) => {
     e.preventDefault();
@@ -41,8 +39,6 @@ function GitLabDataForm({setUserData}) {
       cformsErrors['userName'] = 'form-error-field';
     }
 
-    console.log(cformsErrors);
-    console.log(tempUserData);
     if(isEmpty(cformsErrors)){
       console.info("Save data into storage");
 
@@ -69,12 +65,10 @@ function GitLabDataForm({setUserData}) {
     setTempUserData(t => {            
       return {...t,[e.target.name] : e.target.value};
     });
-
   }
 
     return (
     <>
-
         <h2>Gitlab data.</h2>
         <p>Please provide the following data.</p>
         <form onSubmit={handleSubmit} method='POST' >

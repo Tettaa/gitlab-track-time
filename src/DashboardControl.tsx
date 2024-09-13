@@ -10,8 +10,8 @@ import Dashboard from './Dashboards';
 
 export default function DashboardControl({username}) {
 
-    const [fromDate, setFromDate] = useState<string>(moment('2024-09-02').format('YYYY-MM-DD'));
-    const [toDate, setToDate] = useState<string>(moment('2024-09-07').format('YYYY-MM-DD'));
+    const [fromDate, setFromDate] = useState<string>(moment().startOf('week').add(1,'days').format('YYYY-MM-DD'));
+    const [toDate, setToDate] = useState<string>(moment().format('YYYY-MM-DD'));
 
     const moveWeek = (num:number) => {
         var nextDate = moment(fromDate);
