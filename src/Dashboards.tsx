@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as bootstrap from 'bootstrap';
 import ApolloFetchError from './ApolloFetchError';
 import { type IssueData } from './Types';
-
+import TimeRegModal from './TimeRegModal';
 
 function Dashboard({username, fromDate, toDate}) {
 
@@ -18,10 +18,7 @@ function Dashboard({username, fromDate, toDate}) {
     const [modalState, setModalState] = useState(modalStateEmpty);
 
 
-    useEffect(() => {
-        console.log("render Dashboard"); 
-        console.log("startTime", fromDate);
-        console.log("endTime", toDate);      
+    useEffect(() => {   
     },[fromDate,toDate])
     
 
@@ -173,7 +170,7 @@ function Dashboard({username, fromDate, toDate}) {
               <div className="modal-content">
                 <div className="modal-header">
                   <h1 className="modal-title fs-5" >{modalState.projectTitle} -  {modalState.issueTitle}</h1>
-                  <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  
                 </div>
 
                 <form onSubmit={handleSubmit}>
@@ -194,7 +191,9 @@ function Dashboard({username, fromDate, toDate}) {
                     </div>
                     </div>
                     <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" data-bs-dismiss="modal"  >Close</button>
+                    <button type="button" className="btn btn-secondary" data-bs-dismiss="modal"  onClick={ () => {
+                        setModalState({...modalStateEmpty,  open:false})
+                    }}>Close</button>
                     <button type="submit" className="btn btn-primary">Save time</button>
                     </div>
                 </form>
@@ -212,6 +211,14 @@ function Dashboard({username, fromDate, toDate}) {
         const [weekDates, setWeekDates] = useState<string[]>();
         const [effortMap, setEffortMap] = useState<any[][]>();
         const [totalWeek, setTotalWeek] = useState(0);
+
+        const [dayIssues, setDayIssues] = useState<any>({
+            show:false,
+            gId: null,
+            day: null,
+        });
+
+
 
         useMemo(()=> {
             console.log("init Table"); 
@@ -249,13 +256,22 @@ function Dashboard({username, fromDate, toDate}) {
                 
                 if(typeof matrix[node.issue.id] == "undefined"){
                     matrix[node.issue.id] = [];
-                    matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] = node.timeSpent;
+                    matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] = {
+                        time: node.timeSpent,
+                        issueId: node.issue.id 
+                    };
                 }else{
                     if(typeof matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] == "undefined"){
                         //matrix[node.issue.id] = [];
-                        matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] = node.timeSpent;
+                        matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] = {
+                            time: node.timeSpent,
+                            issueId: node.issue.id 
+                        };
                     }else{
-                        matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] += node.timeSpent;
+                        matrix[node.issue.id][spentDate.format('DD.MM.YYYY')] = {
+                            ...matrix[node.issue.id][spentDate.format('DD.MM.YYYY')],
+                            time: node.timeSpent + matrix[node.issue.id][spentDate.format('DD.MM.YYYY')]['time']
+                        };
                     }
                 }
 
@@ -290,6 +306,13 @@ function Dashboard({username, fromDate, toDate}) {
         },[])
 
 
+        function setCurrentGitlabId (id, date){
+            setDayIssues({
+                show: true,
+                gId:id,
+                day:date
+            });
+        }
 
 
         function retrieveValue(x,y){
@@ -299,7 +322,7 @@ function Dashboard({username, fromDate, toDate}) {
             if(typeof effortMap[x][y] == "undefined"){
                 return "0";
             }
-            return toHuman(effortMap[x][y]);
+            return toHuman(effortMap[x][y]['time']);
 
         }
 
@@ -307,6 +330,13 @@ function Dashboard({username, fromDate, toDate}) {
         return(
 
             <>
+
+                
+                <TimeRegModal 
+                    dayIssues={dayIssues} 
+                    setDayIssues={setDayIssues} 
+                    userName={username}/>
+
                 { weekDates && effortMap &&
                     <table className="table">
                         <thead>
@@ -337,7 +367,8 @@ function Dashboard({username, fromDate, toDate}) {
                                 </td>
                                 {
                                     weekDates.map((dateFormat) => (
-                                        <td key={dateFormat}>{retrieveValue(i.gitlabId,dateFormat) != "0" ?  <b>{retrieveValue(i.gitlabId,dateFormat)}</b> : 0  }</td>
+                                        <td key={dateFormat}>{retrieveValue(i.gitlabId,dateFormat) != "0" ?                                              
+                                            <a href="#" onClick={(e) => {e.preventDefault(); setCurrentGitlabId(i.gitlabId,dateFormat); } }><b>{retrieveValue(i.gitlabId,dateFormat)}</b></a> : 0  }</td>
                                     ))
                                 }
                                 </tr>
@@ -374,7 +405,6 @@ function Dashboard({username, fromDate, toDate}) {
                 setModalState={setModalState} 
                 refetch={refetch}
             />
-
 
             {(error || loading) && 
             
