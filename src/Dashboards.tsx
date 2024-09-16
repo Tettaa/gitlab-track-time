@@ -335,7 +335,9 @@ function Dashboard({username, fromDate, toDate}) {
                 <TimeRegModal 
                     dayIssues={dayIssues} 
                     setDayIssues={setDayIssues} 
-                    userName={username}/>
+                    userName={username}
+                    onClose={() => { refetch();}}
+                    />
 
                 { weekDates && effortMap &&
                     <table className="table">
