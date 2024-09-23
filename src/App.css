@@ -47,3 +47,16 @@
 .read-the-docs {
   color: #888;
 }
+
+.red {
+  color: red;
+  
+}
+
+
+.hour_underline,
+.hour_underline:hover {
+  color: black;
+  text-decoration: underline;
+}
+

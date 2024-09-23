@@ -81,11 +81,11 @@ function App() {
       return (
         <>
 
-        <nav className="navbar navbar-expand-lg bg-body-tertiary d-none d-sm-block">
+        <nav className="navbar navbar-expand-lg bg-body-tertiary gitlab-color d-none d-sm-block mb-3">
           <div className="container-fluid">
             <NavLink to='/today' className='nav-link'>Today effort</NavLink>
             <NavLink to='/dashboard' className='nav-link'>Dashboard</NavLink>
-            <NavLink to='/my-issue' className='nav-link'>My issue</NavLink>
+          {/*   <NavLink to='/my-issue' className='nav-link'>My issue</NavLink> */}
             <NavLink to='/settings' className='nav-link'>Settings</NavLink>
           </div>
         </nav>
