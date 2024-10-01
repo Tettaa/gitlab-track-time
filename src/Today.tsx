@@ -82,7 +82,7 @@ const Today = ({username}) => {
             <div>
                 <h2>Today {toHuman(totalToday)} h</h2>
                 <h2>This week {toHuman(totalWeek)} h</h2>
-                <a onClick={() => {chrome.tabs.create({ url: document.URL });}} href='#'>Open in tab</a>
+                <a className="btn btn-primary m-2" onClick={() => {chrome.tabs.create({ url: document.URL });}} href='#'>Open Extension in a tab</a>
             </div>
             }
 

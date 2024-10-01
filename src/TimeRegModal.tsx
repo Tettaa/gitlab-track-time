@@ -5,6 +5,9 @@ import ApolloFetchError from './ApolloFetchError';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTrash } from '@fortawesome/free-solid-svg-icons'
+
 export default function TimeRegModal({dayIssues, setDayIssues, userName, onClose}) {
 
     const handleClose = () => {
@@ -105,14 +108,17 @@ export default function TimeRegModal({dayIssues, setDayIssues, userName, onClose
 
             </thead>
             <tbody>
-            {Array.from(data.timelogs.nodes).map((node, index) => (
+            {Array.from(data.timelogs.nodes).map((node:any, index) => (
                 
                             node.issue.id == dayIssues.gId ?
                              <tr key={index+"_del"}>
                                 <td>  { node.issue.title }</td>
                                 <td className='text-right'>  { toHuman(node.timeSpent) }</td>
-                                <td>  
-                                    <a href='' onClick={(e) => {e.preventDefault(); deleteTimeReg(node.id);}}>Delete</a></td>
+                                <td> 
+                                <a href='' onClick={(e) => {e.preventDefault(); deleteTimeReg(node.id);}}> 
+                                    <FontAwesomeIcon className='red' size='1x' icon={faTrash} />
+                                </a>
+                                </td>
 
                             </tr>:""
                 

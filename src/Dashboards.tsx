@@ -211,6 +211,7 @@ function Dashboard({username, fromDate, toDate}) {
         const [weekDates, setWeekDates] = useState<string[]>();
         const [effortMap, setEffortMap] = useState<any[][]>();
         const [totalWeek, setTotalWeek] = useState(0);
+        const [projects, setProjects] = useState<string[]>();
 
         const [dayIssues, setDayIssues] = useState<any>({
             show:false,
@@ -225,7 +226,7 @@ function Dashboard({username, fromDate, toDate}) {
             let tt = 0;
             let tw = 0;
 
-            
+            const projectsSet: Set<string> = new Set();
             let mapData = new Map();
             apolloData.timelogs.nodes.forEach((node) => {
                 let issueData : IssueData = {
@@ -238,15 +239,20 @@ function Dashboard({username, fromDate, toDate}) {
                 issueData.projectTitle = node.project.name;
                 issueData.projectWebUrl =  node.project.webUrl;
                 mapData.set(node.issue.id,issueData);
+                projectsSet.add(node.project.name);
             });
+
+            let projectsArray : string[] = [...projectsSet];
+            setProjects(projectsArray.sort((n1,n2) => n1 > n2 ? -1:1));
             
+
             setIssues([...mapData.values()]
                 .sort((n1,n2) => n1.title > n2.title ? -1:1)
                 .sort((n1,n2) => n1.projectTitle > n2.projectTitle ? -1:1)
             );
 
             let matrix: any[][] = [];
-
+            let totals = 0;
             apolloData.timelogs.nodes.forEach((node) => {
                 const spentDate = moment(node.spentAt);
                 if (spentDate.isSame(moment() , 'day')) {
@@ -275,7 +281,41 @@ function Dashboard({username, fromDate, toDate}) {
                     }
                 }
 
+                
+               
+                //Sum all time by issude id
+                if(typeof matrix[node.issue.id]['total_issue'] == "undefined") {
+                    matrix[node.issue.id]['total_issue'] = {
+                        time: node.timeSpent,
+                        issueId: node.issue.id 
+                    };
+                }else{
+                    matrix[node.issue.id]['total_issue'] = {
+                        ...matrix[node.issue.id]['total_issue'],
+                        time: node.timeSpent + matrix[node.issue.id]['total_issue']['time']
+                    };
+                }
+
+                //Sum all time by project name
+                if(typeof matrix[node.project.name] == "undefined") {
+                    matrix[node.project.name] = [];
+                    matrix[node.project.name]['total'] = {
+                        url: node.project.webUrl,
+                        time: 0
+                    };                
+                }
+                matrix[node.project.name]['total'] = {
+                    ...matrix[node.project.name]['total'],
+                    time: matrix[node.project.name]['total']['time'] + node.timeSpent
+                }
+                //sum all timetrack
+                totals += node.timeSpent;
               });
+
+              //set totals hour in current week
+              matrix['totals'] = totals;
+
+              
 
 
               apolloData.timelogs.nodes.forEach((node) => {
@@ -292,6 +332,7 @@ function Dashboard({username, fromDate, toDate}) {
                     
                 }
             })
+
             
 
               let weekdays: string[] = [];
@@ -340,57 +381,94 @@ function Dashboard({username, fromDate, toDate}) {
                     />
 
                 { weekDates && effortMap &&
-                    <table className="table">
-                        <thead>
-                        <tr>
-                            <th>
-                                Project
-                            </th>
-                            <th>
-                                Issue
-                            </th>
 
-                            {
-                                Array.from(weekDates).map((dateFormat) => (
-                                    <th key={dateFormat}>{dateFormat}</th>
-                                ))
-                            }
-                            <th>Effort</th>
-                        </tr>
-                        </thead>
+                    <div>
 
-                        <tbody>
-                        {
-                             Array.from(issues).map((i) => (
-                                <tr key={i.gitlabId}>
-                                <td> <a href='#' onClick={(e) => window.open(i.projectWebUrl+"/-/issues", "_blank")}>{i.projectTitle}</a> </td>
-                                <td>
-                                    <a href='' onClick={(e) => {e.preventDefault(); showModal(i.gitlabId)}}>{i.title}</a>
-                                </td>
-                                {
-                                    weekDates.map((dateFormat) => (
-                                        <td key={dateFormat}>{retrieveValue(i.gitlabId,dateFormat) != "0" ?                                              
-                                            <a href="#" onClick={(e) => {e.preventDefault(); setCurrentGitlabId(i.gitlabId,dateFormat); } }><b>{retrieveValue(i.gitlabId,dateFormat)}</b></a> : 0  }</td>
-                                    ))
-                                }
-                                </tr>
-                            ))
-                        }
-                        
+                        <table className="table">
+                            <thead>
                             <tr>
-                                <td ><b>Totale</b></td><td></td>
+                                <th>
+                                    Project
+                                </th>
+                                <th>
+                                    Issue
+                                </th>
+
                                 {
                                     Array.from(weekDates).map((dateFormat) => (
-                                        <td key={dateFormat}>{effortMap.hasOwnProperty('day_total')  && effortMap['day_total'][dateFormat] != "0" ?  <b>{toHuman(effortMap['day_total'][dateFormat])}</b> : 0  }</td>
-                                        
+                                        <th key={dateFormat}>{dateFormat}</th>
                                     ))
                                 }
-
+                                <th>Effort</th>
                             </tr>
-            
-                        </tbody>                    
-                    </table> 
-                    }
+                            </thead>
+
+                            <tbody>
+                            {
+                                Array.from(issues).map((i) => (
+                                    <tr key={i.gitlabId}>
+                                    <td> <a href='#' onClick={(e) => window.open(i.projectWebUrl+"/-/issues", "_blank")}>{i.projectTitle}</a> </td>
+                                    <td>
+                                        <a href='' onClick={(e) => {e.preventDefault(); showModal(i.gitlabId)}}>{i.title}</a>
+                                    </td>
+                                    {
+                                        weekDates.map((dateFormat) => (
+                                            <td key={dateFormat}>{retrieveValue(i.gitlabId,dateFormat) != "0" ?                                              
+                                                <a className='hour_underline' href="#" onClick={(e) => {e.preventDefault(); setCurrentGitlabId(i.gitlabId,dateFormat); } }><b>{retrieveValue(i.gitlabId,dateFormat)}</b></a> : 0  }</td>
+                                        ))
+                                    }
+
+                                        <td>{retrieveValue(i.gitlabId,'total_issue') != "0" ?                                              
+                                            <a className='hour_underline' ><b>{retrieveValue(i.gitlabId,'total_issue')}</b></a> : 0  }</td>
+                                    </tr>
+                                ))
+                            }
+                            
+                                <tr>
+                                    <td ><b>Totale</b></td><td></td>
+                                    {
+                                        Array.from(weekDates).map((dateFormat) => (
+                                            <td key={dateFormat}>{effortMap.hasOwnProperty('day_total')  && effortMap['day_total'][dateFormat] != "0" ?  <b>{toHuman(effortMap['day_total'][dateFormat])}</b> : 0  }</td>
+                                            
+                                        ))
+                                    }
+
+                                    <td><b>{toHuman(effortMap['totals'])}</b></td>
+
+                                </tr>
+                
+                            </tbody>                    
+                        </table> 
+
+
+                         <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>Project</th>
+                                    <th>Effort</th>
+                                </tr>                                
+                            </thead>
+                            <tbody>
+                                
+                                {Array.from(projects).map((projectName) => (
+                                    <tr>
+                                        <td> <a href='#' onClick={(e) => window.open(effortMap[projectName]['total']['url']+"/-/issues", "_blank")}>{projectName}</a> </td>
+                                        
+                                        <td><b>{toHuman(effortMap[projectName]['total']['time'])}</b></td>
+                                    </tr>
+                                    ))
+                                }
+                                    <tr>
+                                        <td></td>
+                                        <td><b>{toHuman(effortMap['totals'])}</b></td>
+                                    </tr>
+                                
+                            </tbody>
+                         </table>
+                    </div>
+
+
+                }
 
             </>
             
@@ -422,7 +500,7 @@ function Dashboard({username, fromDate, toDate}) {
                 
                 <Table apolloData={data}/>
 
-                <a onClick={() => {chrome.tabs.create({ url: document.URL });}} href='#'>Open in tab</a>
+               {/*  <a className="d-lg-none d-xl-block d-md-none d-lg-block" onClick={() => {chrome.tabs.create({ url: document.URL });}} href='#'>Open in tab</a> */}
 
             </div>
             }

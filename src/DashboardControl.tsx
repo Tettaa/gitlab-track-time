@@ -20,7 +20,17 @@ export default function DashboardControl({username}) {
         var friday = nextDate.clone().weekday(7);
         setFromDate(monday.format('YYYY-MM-DD'));
         setToDate(friday.format('YYYY-MM-DD'));
-      } 
+    } 
+
+    const currentWeek = () => {
+        var nextDate = moment();
+        var monday = nextDate.clone().weekday(1);
+        var friday = nextDate.clone().weekday(7);
+        setFromDate(moment().weekday(1).format('YYYY-MM-DD'));
+        setToDate(moment().weekday(7).format('YYYY-MM-DD'));
+    } 
+
+
 
 
     return(
@@ -28,6 +38,7 @@ export default function DashboardControl({username}) {
 
                         <div className='d-flex justify-content-end'>
                             <button className='btn btn-primary m-2' onClick={()=> moveWeek(-1)}>Previous week</button>
+                            <button className='btn btn-success m-2' onClick={()=> currentWeek()}>Current week</button>
                             <button className='btn btn-primary m-2' onClick={()=> moveWeek(1)}>Next week</button>
                         </div>
 
